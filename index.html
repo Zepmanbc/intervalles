@@ -209,7 +209,6 @@
             osc.stop(t + duration);
         }
 
-        
         function playFrequencies(freqs, mode, direction) {
             const noteDuration = 1;
             const gapBetweenNotes = 0.1;
@@ -227,7 +226,7 @@
             }
         }
 
-        function playInterval(baseFreq, intervalName, direction) {
+        function playInterval(baseFreq, intervalName, mode, direction) {
             const semitones = INTERVALS[intervalName];
 
             const secondFreq =
@@ -235,8 +234,15 @@
                 ? transposeFrequency(baseFreq, semitones)
                 : transposeFrequency(baseFreq, -semitones);
 
-            playFrequency(baseFreq, 0);
-            playFrequency(secondFreq, 1);
+            if (mode === "chord") {
+                playFrequency(baseFreq, 0);
+                playFrequency(secondFreq, 0);
+                return 1;
+            } else {
+                playFrequency(baseFreq, 0);
+                playFrequency(secondFreq, 1);
+            }
+
         }
 
         function playTriad(rootFreq, triadType, mode, direction) {
@@ -279,10 +285,12 @@
         function getRandomNote() {
             return NOTES[Math.floor(Math.random() * NOTES.length)];
         }
+        
         function resolveDirection(direction) {
             if (direction !== "random") return direction;
             return Math.random() < 0.5 ? "up" : "down";
         }
+        
         function runExercise(config) {
             const { rootNote, direction, mode, content } = config;
             const resolvedDirection = resolveDirection(direction);
@@ -298,7 +306,7 @@
             const baseFreq = noteToFrequency(resolvedRoot, 4);
 
             if (isInterval(content)) {
-                playInterval(baseFreq, content, resolvedDirection);
+                playInterval(baseFreq, content, mode, resolvedDirection);
                 return 2;
             }
 
