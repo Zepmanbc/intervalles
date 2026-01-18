@@ -103,6 +103,14 @@
             margin-bottom: 16px;
         }
 
+        #played-notes {
+            margin-top: 12px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 24px;
+            color: #fff;
+        }
+
     </style>
     </head>
     <body>
@@ -168,6 +176,8 @@
         <div class="section actions">
             <button id="start-stop">▶ Démarrer</button>
         </div>
+
+        <div id="played-notes"></div>
 
     <script>
         // Audio
@@ -323,13 +333,13 @@
         }
 
         function getExerciseConfig() {
-            const type = document.querySelector(".type-btn.active").dataset.type;
+            const exerciseType = document.querySelector(".type-btn.active").dataset.type;
             const rootNote = document.querySelector(".root-btn.active").dataset.note;
             const direction = document.querySelector(".dir-btn.active").dataset.value;
             const playStyle = document.querySelector(".style-btn.active").dataset.value;
             const content = document.querySelector(".option-btn.active").dataset.value;
 
-            return { rootNote, direction, playStyle, content, type };
+            return { rootNote, direction, playStyle, content, exerciseType };
         }
 
         function getRandomNote() {
@@ -346,12 +356,42 @@
             return Math.random() < 0.5 ? "arpeggio" : "chord";
         }
 
+        function getNoteNames(rootNote, content, playStyle, direction) {
+            const rootIndex = NOTE_INDEX[rootNote];
+
+            if (isInterval(content)) {
+                const semitones = INTERVALS[content];
+                const secondIndex = direction === "up"
+                    ? rootIndex + semitones
+                    : rootIndex - semitones;
+
+                return [rootNote, NOTES[(secondIndex + 12) % 12]];
+            }
+
+            if (isTriad(content)) {
+                const intervals = TRIADS[content];
+                const notes = intervals.map(semitones => NOTES[(rootIndex + semitones + 12) % 12]);
+                return direction === "down" ? notes.reverse() : notes;
+            }
+
+            if (isScaleMode(content)) {
+                const intervals = SCALE_MODES[content];
+                const notes = intervals.map(semitones =>
+                NOTES[(rootIndex + semitones + 12) % 12]
+                );
+                return direction === "down" ? notes.reverse() : notes;
+            }
+        }
+
         function runExercise(config) {
             const { rootNote, direction, playStyle, content } = config;
 
-            const resolvedDirection = isScaleMode(content) ? (Math.random() < 0.5 ? "up" : "down") : resolveDirection(direction);
+            const resolvedDirection = resolveDirection(direction);
             const resolvedPlayStyle = resolvePlayStyle(playStyle);
             const resolvedRoot = rootNote === "random" ? getRandomNote() : rootNote;
+            const notesPlayed = getNoteNames(resolvedRoot, content, resolvedPlayStyle, resolvedDirection);
+            
+            showPlayedNotes(notesPlayed);
 
             console.log("🎵 Exercice");
             console.log("Note de départ :", resolvedRoot);
@@ -385,6 +425,7 @@
 
         const startStopBtn = document.getElementById("start-stop");
         const exerciseOptions = document.getElementById("exercise-options");
+        const playedNotesEl = document.getElementById("played-notes");
 
         function renderOptions(type) {
             exerciseOptions.innerHTML = "";
@@ -409,6 +450,10 @@
 
             // default active first
             exerciseOptions.querySelector("button")?.classList.add("active");
+        }
+
+        function showPlayedNotes(notes) {
+            playedNotesEl.textContent = notes.join("  -  ");
         }
 
         function setupSwitch(groupId) {
