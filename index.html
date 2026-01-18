@@ -137,18 +137,23 @@
             <label>Note de départ</label>
             <div class="switch-group" id="root-note-group">
                 <button class="root-btn" data-note="C">C</button>
-                <button class="root-btn" data-note="C#">C#</button>
                 <button class="root-btn" data-note="D">D</button>
-                <button class="root-btn" data-note="D#">D#</button>
                 <button class="root-btn" data-note="E">E</button>
                 <button class="root-btn" data-note="F">F</button>
-                <button class="root-btn" data-note="F#">F#</button>
                 <button class="root-btn" data-note="G">G</button>
-                <button class="root-btn" data-note="G#">G#</button>
                 <button class="root-btn" data-note="A">A</button>
-                <button class="root-btn" data-note="A#">A#</button>
                 <button class="root-btn" data-note="B">B</button>
                 <button class="root-btn active" data-note="random">🔀</button>
+            </div>
+        </div>
+
+        <!-- ALTÉRATION -->
+        <div class="section">
+            <label>Altération</label>
+            <div class="switch-group" id="accidental-group">
+                <button class="acc-btn" data-value="flat">♭</button>
+                <button class="acc-btn active" data-value="natural">♮</button>
+                <button class="acc-btn" data-value="sharp">#</button>
             </div>
         </div>
 
@@ -184,13 +189,18 @@
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         const audioCtx = new AudioContext();
         const NOTE_INDEX = {
-            "C": 0,  "C#": 1,
-            "D": 2,  "D#": 3,
-            "E": 4,
-            "F": 5,  "F#": 6,
-            "G": 7,  "G#": 8,
-            "A": 9,  "A#": 10,
-            "B": 11
+            "B#": 0, "C": 0,
+            "C#": 1, "Db": 1,
+            "D": 2,
+            "D#": 3, "Eb": 3,
+            "E": 4,  "Fb": 4,
+            "F": 5,  "E#": 5,
+            "F#": 6, "Gb": 6,
+            "G": 7,
+            "G#": 8, "Ab": 8,
+            "A": 9,
+            "A#": 10, "Bb": 10,
+            "B": 11, "Cb": 11,
         };
         const NOTES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
         const TRIADS = {
@@ -323,20 +333,41 @@
         function isTriad(content) {return content in TRIADS;}
         function isScaleMode(content) {return content in SCALE_MODES;}
 
+        function applyAccidental(note, accidental) {
+            if (accidental === "natural") return note;
+            if (accidental === "sharp") return note + "#";
+            if (accidental === "flat") {
+                // ex : D -> Db
+                if (note.length === 2 && note.includes("#")) {
+                    // C# -> C (bécarre)
+                    return note[0];
+                }
+                return note + "b";
+            }
+        }
+
         function getExerciseConfig() {
             const exerciseType = document.querySelector(".type-btn.active").dataset.type;
             const rootNote = document.querySelector(".root-btn.active").dataset.note;
+            const accidental = document.querySelector(".acc-btn.active").dataset.value;
             const direction = document.querySelector(".dir-btn.active").dataset.value;
             const playStyle = document.querySelector(".style-btn.active").dataset.value;
             const content = document.querySelector(".option-btn.active").dataset.value;
 
-            return { rootNote, direction, playStyle, content, exerciseType };
+            return { rootNote, accidental, direction, playStyle, content, exerciseType };
         }
 
-        function getRandomNote() {
-            return NOTES[Math.floor(Math.random() * NOTES.length)];
+        function getRandomNoteAndAccidental() {
+            const note = NOTES[Math.floor(Math.random() * NOTES.length)];
+            const accidental = ["flat", "natural", "sharp"][Math.floor(Math.random() * 3)];
+            return applyAccidental(note, accidental)
         }
 
+        function applyAccidental(note, accidental) {
+            if (accidental === "natural") return note;
+            if (accidental === "sharp") return note + "#";
+            if (accidental === "flat") return note + "b";
+        }
         function resolveDirection(direction) {
             if (direction !== "random") return direction;
             return Math.random() < 0.5 ? "up" : "down";
@@ -375,11 +406,11 @@
         }
 
         function runExercise(config) {
-            const { rootNote, direction, playStyle, content } = config;
+            const { rootNote, accidental, direction, playStyle, content, exerciseType } = config;
 
             const resolvedDirection = resolveDirection(direction);
             const resolvedPlayStyle = resolvePlayStyle(playStyle);
-            const resolvedRoot = rootNote === "random" ? getRandomNote() : rootNote;
+            const resolvedRoot = rootNote === "random" ? getRandomNoteAndAccidental() : applyAccidental(rootNote, accidental);
             const notesPlayed = getNoteNames(resolvedRoot, content, resolvedDirection);
             
             showPlayedNotes(notesPlayed);
@@ -504,6 +535,7 @@
         });
 
         setupSwitch("root-note-group");
+        setupSwitch("accidental-group");
         setupSwitch("exercise-type");
         setupSwitch("direction");
         setupSwitch("playStyle");
