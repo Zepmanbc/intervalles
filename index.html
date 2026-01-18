@@ -434,6 +434,10 @@
             }
         }
 
+        function showPlayedNotes(notes) {
+            playedNotesEl.textContent = notes.join("  -  ");
+        }
+
         // Exercice logic
 
         function isInterval(content) {return content in INTERVALS;}
@@ -473,12 +477,19 @@
             return applyAccidental(note, accidental)
         }
 
+        function sanitizeRootNoteString(note) {
+            if (note.length > 2) {
+                return note.slice(0, 2);
+            }
+            return note;
+        }
+
         function runExercise(config) {
             const { rootNote, accidental, direction, playStyle, content, exerciseType } = config;
 
             const resolvedDirection = resolveDirection(direction);
             const resolvedPlayStyle = resolvePlayStyle(playStyle);
-            const resolvedRoot = rootNote === "random" ? getRandomNoteAndAccidental() : applyAccidental(rootNote, accidental);
+            const resolvedRoot = sanitizeRootNoteString(rootNote === "random" ? getRandomNoteAndAccidental() : applyAccidental(rootNote, accidental));
             const notesPlayed = getNoteNames(resolvedRoot, content, resolvedDirection);
             
             showPlayedNotes(notesPlayed);
@@ -542,30 +553,6 @@
             exerciseOptions.querySelector("button")?.classList.add("active");
         }
 
-        function showPlayedNotes(notes) {
-            playedNotesEl.textContent = notes.join("  -  ");
-        }
-
-        function setupSwitch(groupId) {
-            const group = document.getElementById(groupId);
-            const buttons = group.querySelectorAll("button");
-
-            buttons.forEach(btn => {
-                btn.addEventListener("click", () => {
-                buttons.forEach(b => b.classList.remove("active"));
-                btn.classList.add("active");
-                });
-            });
-        }
-
-        startStopBtn.addEventListener("click", () => {
-            if (!isPlaying) {
-                startExercise();
-            } else {
-                stopExercise();
-            }
-        });
-
         function startExercise() {
             isPlaying = true;
             startStopBtn.textContent = "⏹ Stop";
@@ -593,6 +580,27 @@
             loopId = setTimeout(runLoop, (sequenceDuration + 1) * 1000);
         }
         
+        // initializaton
+        startStopBtn.addEventListener("click", () => {
+            if (!isPlaying) {
+                startExercise();
+            } else {
+                stopExercise();
+            }
+        });
+
+        function setupSwitch(groupId) {
+            const group = document.getElementById(groupId);
+            const buttons = group.querySelectorAll("button");
+
+            buttons.forEach(btn => {
+                btn.addEventListener("click", () => {
+                    buttons.forEach(b => b.classList.remove("active"));
+                    btn.classList.add("active");
+                });
+            });
+        }
+
         document.querySelectorAll(".type-btn").forEach(btn => {
             btn.addEventListener("click", () => {
                 document.querySelectorAll(".type-btn").forEach(b => b.classList.remove("active"));
