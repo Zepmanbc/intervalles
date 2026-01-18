@@ -12,10 +12,6 @@
             color: #eee;
         }
 
-        h1 {
-            text-align: center;
-        }
-
         .section {
             margin-bottom: 1.5rem;
         }
@@ -53,6 +49,7 @@
             flex: 1;
             background: #333;
             color: #eee;
+            font-weight: 600;
         }
 
         .switch-group button.active {
@@ -72,10 +69,6 @@
             color: #fff;
         }
 
-        .actions button.secondary {
-            background: #555;
-        }
-
         #exercise-type {
             display: flex;
             justify-content: center;
@@ -83,7 +76,6 @@
             margin-bottom: 12px;
         }
 
-        /* Container des options */
         #exercise-options {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
@@ -111,22 +103,9 @@
             margin-bottom: 16px;
         }
 
-        .root-btn {
-            padding: 10px 0;
-            border: none;
-            border-radius: 10px;
-            background: #e0e0e0;
-            cursor: pointer;
-            font-weight: 600;
-            min-width: 60px;
-        }
-
     </style>
     </head>
     <body>
-
-        <h1>Ear Training</h1>
-
         <!-- Type d'exercice -->
         <div class="section">
             <label>Type d’exercice</label>
@@ -161,7 +140,7 @@
                 <button class="root-btn" data-note="A">A</button>
                 <button class="root-btn" data-note="A#">A#</button>
                 <button class="root-btn" data-note="B">B</button>
-                <button class="root-btn active" data-note="random">Random</button>
+                <button class="root-btn active" data-note="random">🔀</button>
             </div>
         </div>
 
@@ -171,7 +150,7 @@
             <div class="switch-group" id="direction">
                 <button class="dir-btn active" data-value="up">Montant</button>
                 <button class="dir-btn" data-value="down">Descendant</button>
-                <button class="dir-btn" data-value="random">Random</button>
+                <button class="dir-btn" data-value="random">🔀</button>
             </div>
         </div>
 
@@ -181,7 +160,7 @@
             <div class="switch-group" id="playStyle">
                 <button class="style-btn active" data-value="arpeggio">Arpège</button>
                 <button class="style-btn" data-value="chord">Accord</button>
-                <button class="style-btn" data-value="random">Random</button>
+                <button class="style-btn" data-value="random">🔀</button>
             </div>
         </div>
 
