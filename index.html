@@ -203,6 +203,9 @@
             "B": 11, "Cb": 11,
         };
         const NOTES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+        const NOTE_LETTERS = ["C","D","E","F","G","A","B"];
+        const LETTER_TO_INDEX = { C:0, D:1, E:2, F:3, G:4, A:5, B:6 };
+        const NATURAL_SEMITONES = [0, 2, 4, 5, 7, 9, 11];
         const TRIADS = {
             maj: [0, 4, 7],
             min: [0, 3, 7],
@@ -327,55 +330,85 @@
             return ordered.length * (noteDuration + gap);
         }
 
-        // Exercice logic
+        // Affichage des notes
+        function normalizeNoteName(note) {
+            // transforme "C#" ou "Db" en {letter:"C", accidental:1}
+            const letter = note[0];
+            const accidental = note.length > 1 ? note.slice(1) : "";
+            let accValue = 0;
 
-        function isInterval(content) {return content in INTERVALS;}
-        function isTriad(content) {return content in TRIADS;}
-        function isScaleMode(content) {return content in SCALE_MODES;}
+            if (accidental === "#") accValue = 1;
+            if (accidental === "b") accValue = -1;
 
-        function applyAccidental(note, accidental) {
-            if (accidental === "natural") return note;
-            if (accidental === "sharp") return note + "#";
-            if (accidental === "flat") {
-                // ex : D -> Db
-                if (note.length === 2 && note.includes("#")) {
-                    // C# -> C (bécarre)
-                    return note[0];
-                }
-                return note + "b";
+            return { letter, accValue };
+        }
+
+        function getNoteNameFromSemitone(letter, semitoneTarget) {
+            const baseSemitone = NATURAL_SEMITONES[LETTER_TO_INDEX[letter]];
+            const diff = semitoneTarget - baseSemitone;
+
+            if (diff === 0) return letter;
+            if (diff === 1) return letter + "#";
+            if (diff === -1) return letter + "b";
+
+            // pour gérer E# / B# / Cb / Fb
+            if (diff === 2) return letter + "##";
+            if (diff === -2) return letter + "bb";
+
+            return letter; // fallback
+        }
+
+        function getScaleNoteNames(rootNote, modeIntervals) {
+            const root = normalizeNoteName(rootNote);
+            const rootLetterIndex = LETTER_TO_INDEX[root.letter];
+            const rootSemitone = NOTE_INDEX[rootNote];
+
+            const notes = [];
+
+            for (let i = 0; i < modeIntervals.length; i++) {
+                const letter = NOTE_LETTERS[(rootLetterIndex + i) % 7];
+                const semitone = (rootSemitone + modeIntervals[i]) % 12;
+
+                notes.push(getNoteNameFromSemitone(letter, semitone));
             }
+
+            return notes;
         }
 
-        function getExerciseConfig() {
-            const exerciseType = document.querySelector(".type-btn.active").dataset.type;
-            const rootNote = document.querySelector(".root-btn.active").dataset.note;
-            const accidental = document.querySelector(".acc-btn.active").dataset.value;
-            const direction = document.querySelector(".dir-btn.active").dataset.value;
-            const playStyle = document.querySelector(".style-btn.active").dataset.value;
-            const content = document.querySelector(".option-btn.active").dataset.value;
+        function getTriadNoteNames(rootNote, triadType) {
+            const intervals = TRIADS[triadType];
+            const rootSemitone = NOTE_INDEX[rootNote];
 
-            return { rootNote, accidental, direction, playStyle, content, exerciseType };
-        }
+            const rootLetter = rootNote[0];
+            const rootLetterIndex = LETTER_TO_INDEX[rootLetter];
 
-        function getRandomNoteAndAccidental() {
-            const note = NOTES[Math.floor(Math.random() * NOTES.length)];
-            const accidental = ["flat", "natural", "sharp"][Math.floor(Math.random() * 3)];
-            return applyAccidental(note, accidental)
-        }
+            // Lettres des degrés 1–3–5
+            const degreeLetters = [
+                NOTE_LETTERS[rootLetterIndex % 7],
+                NOTE_LETTERS[(rootLetterIndex + 2) % 7],
+                NOTE_LETTERS[(rootLetterIndex + 4) % 7]
+            ];
 
-        function applyAccidental(note, accidental) {
-            if (accidental === "natural") return note;
-            if (accidental === "sharp") return note + "#";
-            if (accidental === "flat") return note + "b";
-        }
-        function resolveDirection(direction) {
-            if (direction !== "random") return direction;
-            return Math.random() < 0.5 ? "up" : "down";
-        }
+            return intervals.map((semitones, i) => {
+                const letter = degreeLetters[i];
 
-        function resolvePlayStyle(playStyle) {
-            if (playStyle !== "random") return playStyle;
-            return Math.random() < 0.5 ? "arpeggio" : "chord";
+                const targetSemitone =
+                    (rootSemitone + semitones + 12) % 12;
+
+                const naturalSemitone =
+                    NATURAL_SEMITONES[LETTER_TO_INDEX[letter]];
+
+                // ⚠️ différence réelle, sans clamp
+                let diff = targetSemitone - naturalSemitone;
+
+                // normalisation modulo 12
+                if (diff > 6) diff -= 12;
+                if (diff < -6) diff += 12;
+
+                if (diff === 0) return letter;
+                if (diff > 0) return letter + "#".repeat(diff);
+                if (diff < 0) return letter + "b".repeat(-diff);
+            });
         }
 
         function getNoteNames(rootNote, content, direction) {
@@ -391,18 +424,53 @@
             }
 
             if (isTriad(content)) {
-                const intervals = TRIADS[content];
-                const notes = intervals.map(semitones => NOTES[(rootIndex + semitones + 12) % 12]);
+                const notes = getTriadNoteNames(rootNote, content);
                 return direction === "down" ? notes.reverse() : notes;
             }
 
             if (isScaleMode(content)) {
                 const intervals = SCALE_MODES[content];
-                const notes = intervals.map(semitones =>
-                NOTES[(rootIndex + semitones + 12) % 12]
-                );
-                return direction === "down" ? notes.reverse() : notes;
+                return getScaleNoteNames(rootNote, intervals);
             }
+        }
+
+        // Exercice logic
+
+        function isInterval(content) {return content in INTERVALS;}
+        function isTriad(content) {return content in TRIADS;}
+        function isScaleMode(content) {return content in SCALE_MODES;}
+
+        function resolveDirection(direction) {
+            if (direction !== "random") return direction;
+            return Math.random() < 0.5 ? "up" : "down";
+        }
+
+        function resolvePlayStyle(playStyle) {
+            if (playStyle !== "random") return playStyle;
+            return Math.random() < 0.5 ? "arpeggio" : "chord";
+        }
+
+        function getExerciseConfig() {
+            const exerciseType = document.querySelector(".type-btn.active").dataset.type;
+            const rootNote = document.querySelector(".root-btn.active").dataset.note;
+            const accidental = document.querySelector(".acc-btn.active").dataset.value;
+            const direction = document.querySelector(".dir-btn.active").dataset.value;
+            const playStyle = document.querySelector(".style-btn.active").dataset.value;
+            const content = document.querySelector(".option-btn.active").dataset.value;
+
+            return { rootNote, accidental, direction, playStyle, content, exerciseType };
+        }
+
+        function applyAccidental(note, accidental) {
+            if (accidental === "natural") return note;
+            if (accidental === "sharp") return note + "#";
+            if (accidental === "flat") return note + "b";
+        }
+
+        function getRandomNoteAndAccidental() {
+            const note = NOTES[Math.floor(Math.random() * NOTES.length)];
+            const accidental = ["flat", "natural", "sharp"][Math.floor(Math.random() * 3)];
+            return applyAccidental(note, accidental)
         }
 
         function runExercise(config) {
