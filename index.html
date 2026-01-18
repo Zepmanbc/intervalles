@@ -26,6 +26,16 @@
             font-weight: bold;
         }
 
+        .group {
+            margin-bottom: 18px;
+        }
+
+        .group-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+
         select, button {
             width: 100%;
             padding: 0.6rem;
@@ -65,75 +75,103 @@
         .actions button.secondary {
             background: #555;
         }
+
+        #exercise-type {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        /* Container des options */
+        #exercise-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        /* Boutons options */
+        .option-btn {
+            padding: 10px 12px;
+            border: none;
+            border-radius: 10px;
+            background: #e0e0e0;
+            cursor: pointer;
+            font-weight: 600;
+            min-width: 90px;
+            text-align: center;
+        }
+
+        #root-note-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+            gap: 8px;
+            justify-items: center;
+            margin-bottom: 16px;
+        }
+
+        .root-btn {
+            padding: 10px 0;
+            border: none;
+            border-radius: 10px;
+            background: #e0e0e0;
+            cursor: pointer;
+            font-weight: 600;
+            min-width: 60px;
+        }
+
     </style>
     </head>
     <body>
 
         <h1>Ear Training</h1>
 
-        <!-- INTERVALLES / TRIADES -->
+        <!-- Type d'exercice -->
         <div class="section">
-            <label for="content">Intervalle / Triade</label>
-            <select id="content">
-            <optgroup label="Triades">
-                <option value="maj">Majeure</option>
-                <option value="min">Mineure</option>
-                <option value="dim">Diminuée</option>
-                <option value="aug">Augmentée</option>
-            </optgroup>
-            <optgroup label="Intervalles">
-                <option value="m2">Seconde mineure</option>
-                <option value="M2">Seconde majeure</option>
-                <option value="m3">Tierce mineure</option>
-                <option value="M3">Tierce majeure</option>
-                <option value="P4">Quarte juste</option>
-                <option value="TT">Triton</option>
-                <option value="P5">Quinte juste</option>
-                <option value="m6">Sixte mineure</option>
-                <option value="M6">Sixte majeure</option>
-                <option value="m7">Septième mineure</option>
-                <option value="M7">Septième majeure</option>
-                <option value="P8">Octave</option>
-            </optgroup>
-            <optgroup label="Modes">
-                <option value="ionien">Ionien</option>
-                <option value="dorien">Dorien</option>
-                <option value="phrygien">Phrygien</option>
-                <option value="lydien">Lydien</option>
-                <option value="mixolydien">Mixolydien</option>
-                <option value="aeolien">Éolien</option>
-                <option value="locrien">Locrien</option>
-            </optgroup>
-            </select>
+            <label>Type d’exercice</label>
+            <div class="switch-group" id="exercise-type">
+                <button class="type-btn" data-type="interval">Intervals</button>
+                <button class="type-btn active" data-type="triad">Triades</button>
+                <button class="type-btn" data-type="mode">Modes</button>
+            </div>
         </div>
 
-        <!-- NOTE DE DÉPART -->
+        <!-- Options (intervals/triads/modes) -->
         <div class="section">
-            <label for="root-note">Note de départ</label>
-            <select id="root-note">
-            <option value="random">Random</option>
-            <option>C</option>
-            <option>C#</option>
-            <option>D</option>
-            <option>D#</option>
-            <option>E</option>
-            <option>F</option>
-            <option>F#</option>
-            <option>G</option>
-            <option>G#</option>
-            <option>A</option>
-            <option>A#</option>
-            <option>B</option>
-            </select>
+            <label>Choix</label>
+            <div class="switch-group grid" id="exercise-options">
+                <!-- boutons générés dynamiquement -->
+            </div>
+        </div>
+
+        <!-- Note de départ -->
+        <div class="section">
+            <label>Note de départ</label>
+            <div class="switch-group" id="root-note-group">
+                <button class="root-btn" data-note="C">C</button>
+                <button class="root-btn" data-note="C#">C#</button>
+                <button class="root-btn" data-note="D">D</button>
+                <button class="root-btn" data-note="D#">D#</button>
+                <button class="root-btn" data-note="E">E</button>
+                <button class="root-btn" data-note="F">F</button>
+                <button class="root-btn" data-note="F#">F#</button>
+                <button class="root-btn" data-note="G">G</button>
+                <button class="root-btn" data-note="G#">G#</button>
+                <button class="root-btn" data-note="A">A</button>
+                <button class="root-btn" data-note="A#">A#</button>
+                <button class="root-btn" data-note="B">B</button>
+                <button class="root-btn active" data-note="random">Random</button>
+            </div>
         </div>
 
         <!-- DIRECTION -->
         <div class="section">
             <label>Direction</label>
             <div class="switch-group" id="direction">
-            <button class="active" data-value="up">Montant</button>
-            <button data-value="down">Descendant</button>
-            <button data-value="random">Random</button>
+                <button class="dir-btn active" data-value="up">Montant</button>
+                <button class="dir-btn" data-value="down">Descendant</button>
+                <button class="dir-btn" data-value="random">Random</button>
             </div>
         </div>
 
@@ -141,9 +179,9 @@
         <div class="section">
             <label>Mode de jeu</label>
             <div class="switch-group" id="playStyle">
-            <button class="active" data-value="arpeggio">Arpège</button>
-            <button data-value="chord">Accord</button>
-            <button data-value="random">Random</button>
+                <button class="style-btn active" data-value="arpeggio">Arpège</button>
+                <button class="style-btn" data-value="chord">Accord</button>
+                <button class="style-btn" data-value="random">Random</button>
             </div>
         </div>
 
@@ -306,17 +344,13 @@
         }
 
         function getExerciseConfig() {
-            const rootNote = document.getElementById("root-note").value;
-            const direction = getActiveValue("direction");
-            const playStyle = getActiveValue("playStyle");
-            const content = document.getElementById("content").value;
+            const type = document.querySelector(".type-btn.active").dataset.type;
+            const rootNote = document.querySelector(".root-btn.active").dataset.note;
+            const direction = document.querySelector(".dir-btn.active").dataset.value;
+            const playStyle = document.querySelector(".style-btn.active").dataset.value;
+            const content = document.querySelector(".option-btn.active").dataset.value;
 
-            return {
-                rootNote,
-                direction,
-                playStyle,
-                content
-            };
+            return { rootNote, direction, playStyle, content, type };
         }
 
         function getRandomNote() {
@@ -363,10 +397,40 @@
         }
 
         // Interface
+        const INTERVALS_KEYS = Object.keys(INTERVALS);
+        const TRIADS_KEYS = Object.keys(TRIADS);
+        const SCALE_MODES_KEYS = Object.keys(SCALE_MODES);
+
         let isPlaying = false;
         let loopId = null;
 
         const startStopBtn = document.getElementById("start-stop");
+        const exerciseOptions = document.getElementById("exercise-options");
+
+        function renderOptions(type) {
+            exerciseOptions.innerHTML = "";
+
+            let list = [];
+            if (type === "interval") list = INTERVALS_KEYS;
+            if (type === "triad") list = TRIADS_KEYS;
+            if (type === "mode") list = SCALE_MODES_KEYS;
+
+            list.forEach(item => {
+                const btn = document.createElement("button");
+                btn.classList.add("option-btn");
+                btn.dataset.value = item;
+                btn.textContent = item;
+                exerciseOptions.appendChild(btn);
+
+                btn.addEventListener("click", () => {
+                document.querySelectorAll(".option-btn").forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                });
+            });
+
+            // default active first
+            exerciseOptions.querySelector("button")?.classList.add("active");
+        }
 
         function setupSwitch(groupId) {
             const group = document.getElementById(groupId);
@@ -415,8 +479,20 @@
             loopId = setTimeout(runLoop, (sequenceDuration + 1) * 1000);
         }
         
+        document.querySelectorAll(".type-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                document.querySelectorAll(".type-btn").forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+
+                renderOptions(btn.dataset.type);
+            });
+        });
+
+        setupSwitch("root-note-group");
+        setupSwitch("exercise-type");
         setupSwitch("direction");
         setupSwitch("playStyle");
+        renderOptions("triad");
 
     </script>
 </body>
