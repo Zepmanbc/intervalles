@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ear Training</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 1rem;
+            background: #111;
+            color: #eee;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        .section {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+
+        select, button {
+            width: 100%;
+            padding: 0.6rem;
+            font-size: 1rem;
+            border-radius: 6px;
+            border: none;
+        }
+
+        .switch-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .switch-group button {
+            flex: 1;
+            background: #333;
+            color: #eee;
+        }
+
+        .switch-group button.active {
+            background: #4caf50;
+            color: #000;
+        }
+
+        .actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .actions button {
+            flex: 1;
+            font-size: 1.1rem;
+            background: #2196f3;
+            color: #fff;
+        }
+
+        .actions button.secondary {
+            background: #555;
+        }
+    </style>
+    </head>
+    <body>
+
+        <h1>Ear Training</h1>
+
+        <!-- NOTE DE DÉPART -->
+        <div class="section">
+            <label for="root-note">Note de départ</label>
+            <select id="root-note">
+            <option value="random">Random</option>
+            <option>C</option>
+            <option>C#</option>
+            <option>D</option>
+            <option>D#</option>
+            <option>E</option>
+            <option>F</option>
+            <option>F#</option>
+            <option>G</option>
+            <option>G#</option>
+            <option>A</option>
+            <option>A#</option>
+            <option>B</option>
+            </select>
+        </div>
+
+        <!-- DIRECTION -->
+        <div class="section">
+            <label>Direction</label>
+            <div class="switch-group" id="direction">
+            <button class="active" data-value="up">Montant</button>
+            <button data-value="down">Descendant</button>
+            </div>
+        </div>
+
+        <!-- MODE DE JEU -->
+        <div class="section">
+            <label>Mode de jeu</label>
+            <div class="switch-group" id="mode">
+            <button class="active" data-value="arpeggio">Arpège</button>
+            <button data-value="chord">Accord</button>
+            </div>
+        </div>
+
+        <!-- INTERVALLES / TRIADES -->
+        <div class="section">
+            <label for="content">Intervalle / Triade</label>
+            <select id="content">
+            <optgroup label="Intervalles">
+                <option value="m2">Seconde mineure</option>
+                <option value="M2">Seconde majeure</option>
+                <option value="m3">Tierce mineure</option>
+                <option value="M3">Tierce majeure</option>
+                <option value="P4">Quarte juste</option>
+                <option value="TT">Triton</option>
+                <option value="P5">Quinte juste</option>
+                <option value="m6">Sixte mineure</option>
+                <option value="M6">Sixte majeure</option>
+                <option value="m7">Septième mineure</option>
+                <option value="M7">Septième majeure</option>
+                <option value="P8">Octave</option>
+            </optgroup>
+            <optgroup label="Triades">
+                <option value="maj">Majeure</option>
+                <option value="min">Mineure</option>
+                <option value="dim">Diminuée</option>
+                <option value="aug">Augmentée</option>
+            </optgroup>
+            </select>
+        </div>
+
+        <!-- ACTIONS -->
+        <div class="section actions">
+            <button id="start-stop">▶ Démarrer</button>
+        </div>
+
+    <script>
+        // Audio
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioContext();
+        const NOTE_INDEX = {
+            "C": 0,  "C#": 1,
+            "D": 2,  "D#": 3,
+            "E": 4,
+            "F": 5,  "F#": 6,
+            "G": 7,  "G#": 8,
+            "A": 9,  "A#": 10,
+            "B": 11
+        };
+        const NOTES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+        const TRIADS = {
+            maj: [0, 4, 7],
+            min: [0, 3, 7],
+            dim: [0, 3, 6],
+            aug: [0, 4, 8]
+        };
+        const INTERVALS = {
+            m2: 1, M2: 2,
+            m3: 3, M3: 4,
+            P4: 5, TT: 6,
+            P5: 7,
+            m6: 8, M6: 9,
+            m7: 10, M7: 11,
+            P8: 12
+        };
+        const SEQUENCE_DURATION = 3;
+        const noteDuration = 1;
+
+
+        function noteToFrequency(note, octave = 4) {
+            const A4 = 440;
+            const semitoneIndex = NOTE_INDEX[note];
+
+            const semitonesFromA4 =
+                semitoneIndex - NOTE_INDEX["A"] + (octave - 4) * 12;
+
+            return A4 * Math.pow(2, semitonesFromA4 / 12);
+        }
+
+        function transposeFrequency(freq, semitones) {
+            return freq * Math.pow(2, semitones / 12);
+        }
+
+        function playFrequency(freq, delay = 0, duration = 1) {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = "sine";
+            osc.frequency.value = freq;
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const t = audioCtx.currentTime + delay;
+
+            gain.gain.setValueAtTime(0, t);
+            gain.gain.linearRampToValueAtTime(0.5, t + 0.02);
+            gain.gain.linearRampToValueAtTime(0, t + duration);
+
+            osc.start(t);
+            osc.stop(t + duration);
+        }
+
+        
+        function playFrequencies(freqs, mode, direction) {
+            const noteDuration = 1;
+            const gapBetweenNotes = 0.1;
+            if (mode === "chord") {
+                freqs.forEach(freq => playFrequency(freq, 0, noteDuration));
+                return noteDuration;
+            } else {
+                const ordered = direction === "down" ? [...freqs].reverse() : freqs;
+
+                ordered.forEach((freq, index) => {
+                    const delay = index * (noteDuration + gapBetweenNotes);
+                    playFrequency(freq, delay, noteDuration);
+                });
+                return ordered.length * (noteDuration + gapBetweenNotes);
+            }
+        }
+
+        function playInterval(baseFreq, intervalName, direction) {
+            const semitones = INTERVALS[intervalName];
+
+            const secondFreq =
+                direction === "up"
+                ? transposeFrequency(baseFreq, semitones)
+                : transposeFrequency(baseFreq, -semitones);
+
+            playFrequency(baseFreq, 0);
+            playFrequency(secondFreq, 1);
+        }
+
+        function playTriad(rootFreq, triadType, mode, direction) {
+            const intervals = TRIADS[triadType];
+
+            const freqs = intervals.map(semitones =>
+                transposeFrequency(rootFreq, semitones)
+            );
+
+            return playFrequencies(freqs, mode, direction);
+        }
+        
+
+        // Exercice logic
+
+        function isInterval(content) {return content in INTERVALS;}
+
+        function isTriad(content) {return content in TRIADS;}
+
+        function getActiveValue(groupId) {
+            const group = document.getElementById(groupId);
+            const activeBtn = group.querySelector(".active");
+            return activeBtn.dataset.value;
+        }
+
+        function getExerciseConfig() {
+            const rootNote = document.getElementById("root-note").value;
+            const direction = getActiveValue("direction");
+            const mode = getActiveValue("mode");
+            const content = document.getElementById("content").value;
+
+            return {
+                rootNote,    // C, D#, random, etc.
+                direction,   // up | down
+                mode,        // arpeggio | chord
+                content      // m3, M3, maj, min, etc.
+            };
+        }
+
+        function getRandomNote() {
+            return NOTES[Math.floor(Math.random() * NOTES.length)];
+        }
+
+        function runExercise(config) {
+            const { rootNote, direction, mode, content } = config;
+
+            const resolvedRoot = rootNote === "random" ? getRandomNote() : rootNote;
+
+            console.log("🎵 Exercice");
+            console.log("Note de départ :", resolvedRoot);
+            console.log("Direction :", direction);
+            console.log("Mode :", mode);
+            console.log("Contenu :", content);
+
+            const baseFreq = noteToFrequency(resolvedRoot, 4);
+
+            if (isInterval(content)) {
+                playInterval(baseFreq, content, direction);
+                return 2;
+            }
+
+            if (isTriad(content)) {
+                return playTriad(baseFreq, content, mode, direction);
+            }
+        }
+
+        // Interface
+        let isPlaying = false;
+        let loopId = null;
+
+        const startStopBtn = document.getElementById("start-stop");
+
+        function setupSwitch(groupId) {
+            const group = document.getElementById(groupId);
+            const buttons = group.querySelectorAll("button");
+
+            buttons.forEach(btn => {
+                btn.addEventListener("click", () => {
+                buttons.forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                });
+            });
+        }
+
+        startStopBtn.addEventListener("click", () => {
+            if (!isPlaying) {
+                startExercise();
+            } else {
+                stopExercise();
+            }
+        });
+
+        function startExercise() {
+            isPlaying = true;
+            startStopBtn.textContent = "⏹ Stop";
+            startStopBtn.style.background = "#f44336";
+
+            runLoop();
+        }
+
+        function stopExercise() {
+            isPlaying = false;
+            startStopBtn.textContent = "▶ Démarrer";
+            startStopBtn.style.background = "#2196f3";
+
+            clearInterval(loopId);
+            loopId = null;
+        }
+
+        function runLoop() {
+            if (!isPlaying) return;
+
+            const config = getExerciseConfig();
+            const sequenceDuration = runExercise(config);
+
+            // pause de 1 seconde après la séquence
+            loopId = setTimeout(runLoop, (sequenceDuration + 1) * 1000);
+        }
+        
+        setupSwitch("direction");
+        setupSwitch("mode");
+
+
+
+    </script>
+</body>
+</html>
