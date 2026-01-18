@@ -95,6 +95,15 @@
                 <option value="M7">Septième majeure</option>
                 <option value="P8">Octave</option>
             </optgroup>
+            <optgroup label="Modes">
+                <option value="ionien">Ionien</option>
+                <option value="dorien">Dorien</option>
+                <option value="phrygien">Phrygien</option>
+                <option value="lydien">Lydien</option>
+                <option value="mixolydien">Mixolydien</option>
+                <option value="aeolien">Éolien</option>
+                <option value="locrien">Locrien</option>
+            </optgroup>
             </select>
         </div>
 
@@ -131,7 +140,7 @@
         <!-- MODE DE JEU -->
         <div class="section">
             <label>Mode de jeu</label>
-            <div class="switch-group" id="mode">
+            <div class="switch-group" id="playStyle">
             <button class="active" data-value="arpeggio">Arpège</button>
             <button data-value="chord">Accord</button>
             <button data-value="random">Random</button>
@@ -172,6 +181,15 @@
             m7: 10, M7: 11,
             P8: 12
         };
+        const SCALE_MODES = {
+            ionien:  [0, 2, 4, 5, 7, 9, 11],
+            dorien:  [0, 2, 3, 5, 7, 9, 10],
+            phrygien:[0, 1, 3, 5, 7, 8, 10],
+            lydien:  [0, 2, 4, 6, 7, 9, 11],
+            mixolydien:[0, 2, 4, 5, 7, 9, 10],
+            aeolien: [0, 2, 3, 5, 7, 8, 10],
+            locrien: [0, 1, 3, 5, 6, 8, 10]
+        };
         const SEQUENCE_DURATION = 3;
         const noteDuration = 1;
 
@@ -210,10 +228,10 @@
             osc.stop(t + duration);
         }
 
-        function playFrequencies(freqs, mode, direction) {
+        function playFrequencies(freqs, playStyle, direction) {
             const noteDuration = 1;
             const gapBetweenNotes = 0.1;
-            if (mode === "chord") {
+            if (playStyle === "chord") {
                 freqs.forEach(freq => playFrequency(freq, 0, noteDuration));
                 return noteDuration;
             } else {
@@ -227,7 +245,7 @@
             }
         }
 
-        function playInterval(baseFreq, intervalName, mode, direction) {
+        function playInterval(baseFreq, intervalName, playStyle, direction) {
             const semitones = INTERVALS[intervalName];
 
             const secondFreq =
@@ -235,7 +253,7 @@
                 ? transposeFrequency(baseFreq, semitones)
                 : transposeFrequency(baseFreq, -semitones);
 
-            if (mode === "chord") {
+            if (playStyle === "chord") {
                 playFrequency(baseFreq, 0);
                 playFrequency(secondFreq, 0);
                 return 1;
@@ -246,22 +264,40 @@
 
         }
 
-        function playTriad(rootFreq, triadType, mode, direction) {
+        function playTriad(rootFreq, triadType, playStyle, direction) {
             const intervals = TRIADS[triadType];
 
             const freqs = intervals.map(semitones =>
                 transposeFrequency(rootFreq, semitones)
             );
 
-            return playFrequencies(freqs, mode, direction);
+            return playFrequencies(freqs, playStyle, direction);
         }
         
+        function playScaleMode(rootFreq, scaleModeName, direction) {
+            const intervals = SCALE_MODES[scaleModeName];
+            const freqs = intervals.map(semitones =>
+                transposeFrequency(rootFreq, semitones)
+            );
+
+            const noteDuration = 0.35;
+            const gap = 0.05;
+
+            const ordered = direction === "down" ? [...freqs].reverse() : freqs;
+
+            ordered.forEach((freq, i) => {
+                const delay = i * (noteDuration + gap);
+                playFrequency(freq, delay, noteDuration);
+            });
+
+            return ordered.length * (noteDuration + gap);
+        }
 
         // Exercice logic
 
         function isInterval(content) {return content in INTERVALS;}
-
         function isTriad(content) {return content in TRIADS;}
+        function isScaleMode(content) {return content in SCALE_MODES;}
 
         function getActiveValue(groupId) {
             const group = document.getElementById(groupId);
@@ -272,14 +308,14 @@
         function getExerciseConfig() {
             const rootNote = document.getElementById("root-note").value;
             const direction = getActiveValue("direction");
-            const mode = getActiveValue("mode");
+            const playStyle = getActiveValue("playStyle");
             const content = document.getElementById("content").value;
 
             return {
-                rootNote,    // C, D#, random, etc.
-                direction,   // up | down
-                mode,        // arpeggio | chord
-                content      // m3, M3, maj, min, etc.
+                rootNote,
+                direction,
+                playStyle,
+                content
             };
         }
 
@@ -292,33 +328,37 @@
             return Math.random() < 0.5 ? "up" : "down";
         }
 
-        function resolveMode(mode) {
-            if (mode !== "random") return mode;
+        function resolvePlayStyle(playStyle) {
+            if (playStyle !== "random") return playStyle;
             return Math.random() < 0.5 ? "arpeggio" : "chord";
         }
 
         function runExercise(config) {
-            const { rootNote, direction, mode, content } = config;
-            const resolvedDirection = resolveDirection(direction);
-            const resolvedMode = resolveMode(mode);
+            const { rootNote, direction, playStyle, content } = config;
 
+            const resolvedDirection = isScaleMode(content) ? (Math.random() < 0.5 ? "up" : "down") : resolveDirection(direction);
+            const resolvedPlayStyle = resolvePlayStyle(playStyle);
             const resolvedRoot = rootNote === "random" ? getRandomNote() : rootNote;
 
             console.log("🎵 Exercice");
             console.log("Note de départ :", resolvedRoot);
             console.log("Direction :", resolvedDirection);
-            console.log("Mode :", resolvedMode);
+            console.log("Mode :", resolvedPlayStyle);
             console.log("Contenu :", content);
 
             const baseFreq = noteToFrequency(resolvedRoot, 4);
 
             if (isInterval(content)) {
-                playInterval(baseFreq, content, resolvedMode, resolvedDirection);
+                playInterval(baseFreq, content, resolvedPlayStyle, resolvedDirection);
                 return 2;
             }
 
             if (isTriad(content)) {
-                return playTriad(baseFreq, content, resolvedMode, resolvedDirection);
+                return playTriad(baseFreq, content, resolvedPlayStyle, resolvedDirection);
+            }
+
+            if (isScaleMode(content)) {
+                return playScaleMode(baseFreq, content, resolvedDirection);
             }
         }
 
@@ -376,9 +416,7 @@
         }
         
         setupSwitch("direction");
-        setupSwitch("mode");
-
-
+        setupSwitch("playStyle");
 
     </script>
 </body>
