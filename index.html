@@ -97,6 +97,7 @@
             <div class="switch-group" id="direction">
             <button class="active" data-value="up">Montant</button>
             <button data-value="down">Descendant</button>
+            <button data-value="random">Random</button>
             </div>
         </div>
 
@@ -278,27 +279,31 @@
         function getRandomNote() {
             return NOTES[Math.floor(Math.random() * NOTES.length)];
         }
-
+        function resolveDirection(direction) {
+            if (direction !== "random") return direction;
+            return Math.random() < 0.5 ? "up" : "down";
+        }
         function runExercise(config) {
             const { rootNote, direction, mode, content } = config;
+            const resolvedDirection = resolveDirection(direction);
 
             const resolvedRoot = rootNote === "random" ? getRandomNote() : rootNote;
 
             console.log("🎵 Exercice");
             console.log("Note de départ :", resolvedRoot);
-            console.log("Direction :", direction);
+            console.log("Direction :", resolvedDirection);
             console.log("Mode :", mode);
             console.log("Contenu :", content);
 
             const baseFreq = noteToFrequency(resolvedRoot, 4);
 
             if (isInterval(content)) {
-                playInterval(baseFreq, content, direction);
+                playInterval(baseFreq, content, resolvedDirection);
                 return 2;
             }
 
             if (isTriad(content)) {
-                return playTriad(baseFreq, content, mode, direction);
+                return playTriad(baseFreq, content, mode, resolvedDirection);
             }
         }
 
